@@ -1,0 +1,15 @@
+{
+  "name": "stableship",
+  "description": "Stableship plugins for coding agents.",
+  "owner": {
+    "name": "Stableship",
+    "url": "https://stableship.ai"
+  },
+  "plugins": [
+    {
+      "name": "stableship",
+      "source": "./claude-code",
+      "description": "Release verdicts, blocking findings, scoped checks, fix-and-verify, why a finding blocks, and the matching rules before you edit sign-in, data or payment code."
+    }
+  ]
+}
