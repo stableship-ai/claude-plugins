@@ -4,7 +4,7 @@ Stableship is a QA and security gate for AI-built apps. This plugin brings it in
 
 - **MCP server.** Connects Claude to the Stableship MCP server (`https://api.stableship.ai/mcp`)
   with your API token. Tools: `list_projects`, `get_findings`, `get_fix_brief`, `explain_finding`,
-  `run_check`, `run_audit`, `rerun_gate`, `get_run_status`, `verify_fix`, `get_rules`,
+  `run_check`, `run_audit`, `get_audit_status`, `rerun_gate`, `get_run_status`, `verify_fix`, `get_rules`,
   `get_scope_policy`, `get_known_issues`, `get_fix_plan`, `get_report`, `get_context`,
   `propose_rule`, `add_context_note`, `get_setup`, `get_launch_report`.
 - **`stableship` skill** (`skills/stableship/SKILL.md`). Claude loads it on its own before it
