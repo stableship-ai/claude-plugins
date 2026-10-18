@@ -9,7 +9,7 @@
  */
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { additionalContext, apiBase, clean, getJson, gitRemote, mayPoll, parseGitRemote, parseJson, readState, readStdin, writeState } from './lib.mjs';
+import { additionalContext, apiBase, clean, getJson, gitRemote, mayPoll, parseGitRemote, parseJson, readState, readStdin, writeState, apiToken } from './lib.mjs';
 
 const INFRA = new Set(['failed_infra', 'timed_out', 'cancelled']);
 const VERDICT_WORDS = { pass: 'passed', warn: 'passed with warnings', block: 'is BLOCKED', skipped: 'was skipped (nothing risky changed)', fail_open: 'was released on a timeout', ship_anyway: 'was shipped anyway' };
@@ -52,7 +52,7 @@ export function blocksAnything(runBodies, findingBodies) {
 }
 
 async function main(final) {
-  const token = process.env.STABLESHIP_TOKEN?.trim();
+  const token = apiToken();
   if (!token) return '';
   const input = parseJson(await readStdin(1000));
   if (final && input.stop_hook_active) return '';

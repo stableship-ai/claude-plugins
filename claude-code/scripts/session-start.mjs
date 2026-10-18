@@ -8,7 +8,7 @@
  */
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { apiBase, clean, getJson, gitRemote, parseGitRemote, readState, readStdin, writeState } from './lib.mjs';
+import { apiBase, clean, getJson, gitRemote, parseGitRemote, readState, readStdin, writeState, apiToken } from './lib.mjs';
 
 export { DEFAULT_API_URL, parseGitRemote } from './lib.mjs';
 export const FETCH_TIMEOUT_MS = 2500;
@@ -84,7 +84,7 @@ export function rulesLine(repo, body) {
 
 /** @returns {Promise<string>} the context text, or '' to stay silent */
 async function main() {
-  const token = process.env.STABLESHIP_TOKEN?.trim();
+  const token = apiToken();
   if (!token) return '';
   const input = parseHookInput(await readStdin(1000));
   const remote = await gitRemote(input.cwd ?? process.cwd());

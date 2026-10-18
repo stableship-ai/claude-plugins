@@ -7,7 +7,7 @@
  */
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { additionalContext, apiBase, clean, getJson, gitRemote, parseGitRemote, parseJson, readState, readStdin, rulesRecentlyShown, writeState } from './lib.mjs';
+import { additionalContext, apiBase, clean, getJson, gitRemote, parseGitRemote, parseJson, readState, readStdin, rulesRecentlyShown, writeState, apiToken } from './lib.mjs';
 
 /** Files worth a look: sign-in, sessions, Supabase, migrations, policies, money, routes, schemas. */
 export const SENSITIVE = /(^|\/)(auth|login|signin|sign-in|signup|sign-up|session|password|oauth|supabase|migrations?|rls|polic(y|ies)|permission|guard|middleware|payments?|billing|stripe|checkout|invoice|subscription|webhook|api|routes?|server|schema|prisma|drizzle|admin|settings|team|members|invite)(\/|\.|-|_|$)|\.sql$/i;
@@ -43,7 +43,7 @@ export function rulesContext(path, body) {
 }
 
 async function main() {
-  const token = process.env.STABLESHIP_TOKEN?.trim();
+  const token = apiToken();
   if (!token) return '';
   const input = parseJson(await readStdin(1000));
   const path = editedPath(input.tool_input, input.cwd);

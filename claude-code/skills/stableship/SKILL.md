@@ -12,6 +12,11 @@ release when a rule breaks. The rules say who may see, create, change and delete
 below come from the `stableship` MCP server (in Claude Code: `mcp__plugin_stableship_stableship__<tool>`).
 Pass `repo` as `owner/name` from `git remote get-url origin` when a tool asks for the project.
 
+Not set up yet (the tools are missing or say the token is missing or invalid)? Run
+`npx --yes @stableship/cli@latest init`: it signs the person in from a link they approve, adds Stableship
+to Claude Code, and says what the repository still needs, one step at a time. Setup, rules and these
+tools are free; testing the app needs a plan.
+
 ## Before you change auth, data access, money or migrations
 
 1. Call `get_rules` with `path` set to the file you are about to edit: it returns only the rules

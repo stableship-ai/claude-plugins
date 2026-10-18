@@ -1,7 +1,7 @@
 ---
-description: Stableship release gate. status shows verdicts; check [quick|security|qa|full] [--as role] [--flow key] [--endpoint path] runs a check; fix fixes and verifies blocking findings; why explains a finding or a run; skip "reason" records that nothing needs checking; test <feature> writes tests from the rules and fixed findings.
-argument-hint: status | check [scope] [--as <role>] [--flow <key>] [--endpoint <path>] | fix [findingId] | why <findingId|runId> | skip "<reason>" | test <feature>
-allowed-tools: mcp__plugin_stableship_stableship__list_projects, mcp__plugin_stableship_stableship__get_findings, mcp__plugin_stableship_stableship__get_fix_brief, mcp__plugin_stableship_stableship__get_run_status, mcp__plugin_stableship_stableship__get_rules, mcp__plugin_stableship_stableship__get_context, mcp__plugin_stableship_stableship__run_check, mcp__plugin_stableship_stableship__verify_fix, mcp__plugin_stableship_stableship__get_fix_plan, mcp__plugin_stableship_stableship__get_report, mcp__plugin_stableship_stableship__explain_finding, mcp__plugin_stableship_stableship__get_scope_policy, mcp__plugin_stableship_stableship__get_known_issues, mcp__plugin_stableship_stableship__rerun_gate, mcp__plugin_stableship_stableship__propose_rule, mcp__plugin_stableship_stableship__add_context_note, mcp__plugin_stableship_stableship__get_setup, mcp__plugin_stableship_stableship__run_audit, mcp__plugin_stableship_stableship__get_launch_report, Bash(git remote get-url origin), Bash(git rev-parse HEAD), Bash(git rev-parse --abbrev-ref HEAD), Bash(git status --porcelain=v2 --branch), Bash(git log -1 --format=%H), Bash(git diff --name-only *), Bash(sleep *), mcp__plugin_stableship_stableship__whoami, mcp__plugin_stableship_stableship__get_next_steps, mcp__plugin_stableship_stableship__get_activity, mcp__plugin_stableship_stableship__get_app_map, mcp__plugin_stableship_stableship__get_approval, mcp__plugin_stableship_stableship__request_fix, mcp__plugin_stableship_stableship__request_fixes_pr, mcp__plugin_stableship_stableship__resume_held_audit, mcp__plugin_stableship_stableship__reanalyze
+description: Stableship release gate. setup signs in and connects this repo; status shows verdicts; check [quick|security|qa|full] [--as role] [--flow key] [--endpoint path] runs a check; fix fixes and verifies blocking findings; why explains a finding or a run; skip "reason" records that nothing needs checking; test <feature> writes tests from the rules and fixed findings.
+argument-hint: setup | status | check [scope] [--as <role>] [--flow <key>] [--endpoint <path>] | fix [findingId] | why <findingId|runId> | skip "<reason>" | test <feature>
+allowed-tools: mcp__plugin_stableship_stableship__list_projects, mcp__plugin_stableship_stableship__get_findings, mcp__plugin_stableship_stableship__get_fix_brief, mcp__plugin_stableship_stableship__get_run_status, mcp__plugin_stableship_stableship__get_rules, mcp__plugin_stableship_stableship__get_context, mcp__plugin_stableship_stableship__run_check, mcp__plugin_stableship_stableship__verify_fix, mcp__plugin_stableship_stableship__get_fix_plan, mcp__plugin_stableship_stableship__get_report, mcp__plugin_stableship_stableship__explain_finding, mcp__plugin_stableship_stableship__get_scope_policy, mcp__plugin_stableship_stableship__get_known_issues, mcp__plugin_stableship_stableship__rerun_gate, mcp__plugin_stableship_stableship__propose_rule, mcp__plugin_stableship_stableship__add_context_note, mcp__plugin_stableship_stableship__get_setup, mcp__plugin_stableship_stableship__run_audit, mcp__plugin_stableship_stableship__get_launch_report, Bash(git remote get-url origin), Bash(git rev-parse HEAD), Bash(git rev-parse --abbrev-ref HEAD), Bash(git status --porcelain=v2 --branch), Bash(git log -1 --format=%H), Bash(git diff --name-only *), Bash(sleep *), Bash(npx --yes @stableship/cli@latest init*), mcp__plugin_stableship_stableship__whoami, mcp__plugin_stableship_stableship__get_next_steps, mcp__plugin_stableship_stableship__get_activity, mcp__plugin_stableship_stableship__get_app_map, mcp__plugin_stableship_stableship__get_approval, mcp__plugin_stableship_stableship__request_fix, mcp__plugin_stableship_stableship__request_fixes_pr, mcp__plugin_stableship_stableship__resume_held_audit, mcp__plugin_stableship_stableship__reanalyze
 ---
 
 You are running the Stableship release gate for the repository in the current directory.
@@ -32,8 +32,8 @@ The Stableship tools come from this plugin's `stableship` MCP server: `list_proj
 `get_launch_report`. Before a fix that touches access, data, payments or migrations, read
 `get_rules`; if the fix needs a rule to change, call `propose_rule` instead of changing access on
 your own.
-If a tool call fails with an authentication error, tell the user to set `STABLESHIP_TOKEN`
-(create a token in Stableship under Settings → API tokens) and restart Claude Code. If it fails
+If a tool call fails with an authentication error, or the Stableship tools are missing, do **setup**
+(it signs in from the terminal and connects Claude Code), then tell the user to start a new session. If it fails
 because the token lacks the `run` scope, say that `check`, `fix`, `skip` and `test` need a token
 with `run`.
 
@@ -48,6 +48,7 @@ with `run`.
 
 Read the first word of the arguments above.
 
+- `setup`: do **setup** (skip "Find this repo's project": setup does it).
 - `status`, or no arguments: do **status**.
 - `check`: do **check**. The rest of the arguments may hold a scope word (`quick`, `security`,
   `qa`, `full`, `auto`) and the options `--as <role>`, `--flow <key>`, `--endpoint <path>`.
@@ -55,7 +56,17 @@ Read the first word of the arguments above.
 - `why`: do **why**. The second argument is a finding id or a run id.
 - `skip`: do **skip**. The rest of the arguments is the reason (quotes optional).
 - `test`: do **test**. The rest of the arguments names a feature, a flow or a file.
-- Anything else: show the six subcommands with one line each and stop.
+- Anything else: show the seven subcommands with one line each and stop.
+
+### setup
+
+Run `npx --yes @stableship/cli@latest init` with Bash. It prints a link and a code: tell the user to open
+the link, sign in or sign up, and approve the code (it waits up to 15 minutes, so keep the command running).
+It then adds Stableship to Claude Code and prints step 3: what this repository still needs in Stableship
+(install the GitHub app, finish setup, or start a plan), with a link. Pass that step on in one or two
+sentences with the link, and say setup, rules and these tools are free; testing the app needs a plan. If it
+added Stableship to Claude Code, say to start a new Claude Code session so the tools load. Running it again
+is safe: it skips what is done.
 
 ### status
 

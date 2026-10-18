@@ -88,6 +88,22 @@ export function gitRemote(cwd) {
   });
 }
 
+/**
+ * The token hooks use: STABLESHIP_TOKEN, else the one `stableship login` (or `stableship init`) saved in
+ * `$XDG_CONFIG_HOME/stableship/config.json` (default `~/.config`). '' when there is none.
+ */
+export function apiToken(env = process.env, home = homedir()) {
+  const fromEnv = env.STABLESHIP_TOKEN && env.STABLESHIP_TOKEN.trim();
+  if (fromEnv) return fromEnv;
+  const xdg = env.XDG_CONFIG_HOME && env.XDG_CONFIG_HOME.trim();
+  try {
+    const saved = JSON.parse(readFileSync(join(xdg ? xdg : join(home, '.config'), 'stableship', 'config.json'), 'utf8'));
+    return typeof saved?.token === 'string' && /^sst_[A-Za-z0-9_-]{40}$/.test(saved.token) ? saved.token : '';
+  } catch {
+    return '';
+  }
+}
+
 /** `$XDG_STATE_HOME/stableship/sessions`, else `~/.local/state/stableship/sessions`. */
 export function stateDir(env = process.env, home = homedir()) {
   const xdg = env.XDG_STATE_HOME && env.XDG_STATE_HOME.trim();
