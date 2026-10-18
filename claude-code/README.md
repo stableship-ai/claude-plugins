@@ -25,20 +25,15 @@ instructions for `AGENTS.md` or a rules file. The `get_setup` tool returns a sho
 Only **reproduced** findings block a release. **Suspected** findings are shown but never block.
 If Stableship itself fails (`failed_infra`, `timed_out`, `cancelled`), the release is not blocked.
 
-## Set your token
+## Sign in
 
-1. In Stableship, open **Settings → API tokens** and create a token.
-   - `read` is enough for `/stableship:gate status` and the session hook.
-   - `run` is needed for `/stableship:gate check` and `/stableship:gate fix`.
-   The token (`sst_…`) is shown once. Copy it then.
-2. Export it in the shell you start Claude Code from, e.g. in `~/.zshrc`:
+The plugin's MCP server signs in with OAuth: no token to copy.
 
-   ```sh
-   export STABLESHIP_TOKEN=sst_...
-   ```
-
-3. Restart Claude Code. The plugin's MCP config sends `Authorization: Bearer ${STABLESHIP_TOKEN}`;
-   Claude Code expands `${STABLESHIP_TOKEN}` from your environment when it starts the server.
+1. After installing, start a session and run `/mcp`, pick `plugin:stableship:stableship` and choose
+   **Authenticate**. Your browser opens app.stableship.ai: sign in (or sign up), pick the workspace and
+   approve. Disconnect it any time in Stableship under **Settings → Connected apps**.
+2. The hooks (rules before edits, run tracking) use a token: `STABLESHIP_TOKEN` if you export one, otherwise
+   the one `npx @stableship/cli login` saved. `/stableship:gate setup` does that sign-in for you.
 
 Optional: `STABLESHIP_API_URL` points the MCP server and the hook at another API (default
 `https://api.stableship.ai`), e.g. a staging server.
@@ -136,10 +131,8 @@ A bare file name matches at any depth under the project, so `Read(.env)` also co
 
 - **`/stableship:gate` is missing.** Run `/plugin` and check that `stableship` is installed and
   enabled. Run `/reload-plugins` after editing plugin files.
-- **Tools fail with 401 / unauthorized.** `STABLESHIP_TOKEN` was not set in the shell that
-  started Claude Code, or the token was revoked or expired. Without the variable, Claude Code sends
-  the literal text `${STABLESHIP_TOKEN}` and `claude mcp list` warns about a missing variable.
-  Export it and restart Claude Code.
+- **Tools fail with 401 / unauthorized.** Run `/mcp`, pick the Stableship server and choose
+  **Authenticate** (or **Re-authenticate** if it was disconnected in Settings → Connected apps).
 - **"lacks the run scope" (403).** Create a token with `run` for `check` and `fix`.
 - **"Not connected" for your repo.** The repo's GitHub `origin` must match a repo connected to a
   Stableship project. Check with `git remote get-url origin` and `/stableship:gate status`.

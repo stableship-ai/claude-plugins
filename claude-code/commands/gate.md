@@ -32,7 +32,8 @@ The Stableship tools come from this plugin's `stableship` MCP server: `list_proj
 `get_launch_report`. Before a fix that touches access, data, payments or migrations, read
 `get_rules`; if the fix needs a rule to change, call `propose_rule` instead of changing access on
 your own.
-If a tool call fails with an authentication error, or the Stableship tools are missing, do **setup**
+If a tool call fails with an authentication error, tell the user to run `/mcp`, pick the Stableship server
+and choose Authenticate (it opens a browser to approve). If the Stableship tools are missing, do **setup**
 (it signs in from the terminal and connects Claude Code), then tell the user to start a new session. If it fails
 because the token lacks the `run` scope, say that `check`, `fix`, `skip` and `test` need a token
 with `run`.

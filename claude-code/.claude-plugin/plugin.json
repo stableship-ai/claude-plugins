@@ -1,7 +1,7 @@
 {
   "name": "stableship",
   "displayName": "Stableship",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Stableship release gate in Claude Code: release verdicts and blocking findings, scoped checks (quick, security, qa, full; one flow, one kind of user or one endpoint), fix-and-verify, why a finding blocks, the matching rules before you edit sign-in, data or payment code, and verdicts delivered into the session.",
   "author": {
     "name": "Stableship",
@@ -20,10 +20,7 @@
   "mcpServers": {
     "stableship": {
       "type": "http",
-      "url": "${STABLESHIP_API_URL:-https://api.stableship.ai}/mcp",
-      "headers": {
-        "Authorization": "Bearer ${STABLESHIP_TOKEN}"
-      }
+      "url": "${STABLESHIP_API_URL:-https://api.stableship.ai}/mcp"
     }
   }
 }
