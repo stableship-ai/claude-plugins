@@ -2,7 +2,7 @@
 name: stableship
 description: Keep an app inside its Stableship rules while changing it. Use before changing auth, sign-in, who can see or change data, row level security, Supabase tables or migrations, payments, or API routes; before pushing a risky change; when a Stableship finding blocks a release; and when fixing Stableship findings. Covers reading the rules for the file you are editing, proposing rule changes, running scoped checks, explaining why something blocks, and fixing findings in order.
 when_to_use: The repo is connected to Stableship (the stableship MCP tools answer for it, or it has a .gate/rules.md). Triggers include "add a table", "change permissions", "add an admin page", "fix the Stableship findings", "why does this block", "is this safe to ship".
-allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_context_note
+allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__request_fix mcp__plugin_stableship_stableship__request_fixes_pr mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach
 ---
 
 # Working inside Stableship's rules
@@ -79,3 +79,25 @@ accept a risk or mark a false positive in Stableship; `get_known_issues` lists t
    it, call `verify_fix`, and poll `get_run_status` until done before starting the next.
 3. Never weaken, skip or delete tests, RLS policies, auth checks or validation to make a finding
    go away. Never read or print `.env` files or secrets.
+
+## Running Stableship for the user
+
+The user can run Stableship entirely from here; the app is optional. At the start of a session,
+`whoami` says which projects this token sees and whether it has the manage scope.
+
+1. **What now?** After an audit, `get_next_steps` gives how it went, what was covered, and what to
+   fix first, grouped by cause. Tell the user in two or three sentences, then offer to start on
+   the first group. `get_app_map` shows the pages each kind of user reached and how each went.
+2. **Fix** as in "Fixing findings" above. `request_fix` asks Stableship's own fix agent instead,
+   and `request_fixes_pr` opens a pull request with the whole plan.
+3. **Held audit:** when the copy could not be built, fix the build, push, then `resume_held_audit`.
+4. **Rules and kinds of user:** `set_role` adds or changes one; `set_role_reach` says whether it
+   reaches every customer's records or only linked ones; `reanalyze` reads the app again.
+5. **Decisions that lower protection** ask the user every time, never you alone: marking a finding
+   a false positive or an accepted risk (triage_finding), approving a fix (decide_fix), shipping
+   anyway, accepting a change to who may see what (decide_rule_suggestion), loosening a policy
+   (set_policy), more autonomy (set_autonomy), removing a kind of user (remove_role) and sharing
+   a report (share_report). Explain what it does and why before calling one. When the answer is
+   `pending_approval`, a person decides in Stableship: tell the user, and check `get_approval`
+   later. Never retry to get around a refusal.
+6. `get_activity` says what changed recently and who did it.
