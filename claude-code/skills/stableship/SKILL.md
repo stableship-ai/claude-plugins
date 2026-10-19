@@ -2,7 +2,7 @@
 name: stableship
 description: Keep an app inside its Stableship rules while changing it. Use before changing auth, sign-in, who can see or change data, row level security, Supabase tables or migrations, payments, or API routes; before pushing a risky change; when a Stableship finding blocks a release; and when fixing Stableship findings. Covers reading the rules for the file you are editing, proposing rule changes, running scoped checks, explaining why something blocks, and fixing findings in order.
 when_to_use: The repo is connected to Stableship (the stableship MCP tools answer for it, or it has a .gate/rules.md). Triggers include "add a table", "change permissions", "add an admin page", "fix the Stableship findings", "why does this block", "is this safe to ship".
-allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__request_fix mcp__plugin_stableship_stableship__request_fixes_pr mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach
+allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__request_fix mcp__plugin_stableship_stableship__request_fixes_pr mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach mcp__plugin_stableship_stableship__create_app mcp__plugin_stableship_stableship__link_repo
 ---
 
 # Working inside Stableship's rules
@@ -98,11 +98,19 @@ The user can run Stableship entirely from here; the app is optional. At the star
 3. **Held audit:** when the copy could not be built, fix the build, push, then `resume_held_audit`.
 4. **Rules and kinds of user:** `set_role` adds or changes one; `set_role_reach` says whether it
    reaches every customer's records or only linked ones; `reanalyze` reads the app again.
-5. **Decisions that lower protection** ask the user every time, never you alone: marking a finding
+5. **An app in several repositories** (a web app, an API, a worker, an MCP server): `create_app`
+   with every repository, the one holding the app's pages first, or `link_repo` to add one to an
+   existing app. Stableship decides from the code which ones belong; `get_app_map` shows each
+   repository's verdict and every service it found, with how its last start went. `set_service`
+   corrects a service (kind, start command, port) and always asks the user first; prefer
+   declaring services in `.gate/build.yaml` when the repository is the user's to change. A
+   repository Stableship cannot see needs the Stableship GitHub App given access to it on GitHub:
+   tell the user, never work around it.
+6. **Decisions that lower protection** ask the user every time, never you alone: marking a finding
    a false positive or an accepted risk (triage_finding), approving a fix (decide_fix), shipping
    anyway, accepting a change to who may see what (decide_rule_suggestion), loosening a policy
-   (set_policy), more autonomy (set_autonomy), removing a kind of user (remove_role) and sharing
-   a report (share_report). Explain what it does and why before calling one. When the answer is
-   `pending_approval`, a person decides in Stableship: tell the user, and check `get_approval`
-   later. Never retry to get around a refusal.
-6. `get_activity` says what changed recently and who did it.
+   (set_policy), more autonomy (set_autonomy), removing a kind of user (remove_role), leaving a
+   service out of testing (set_service) and sharing a report (share_report). Explain what it does
+   and why before calling one. When the answer is `pending_approval`, a person decides in
+   Stableship: tell the user, and check `get_approval` later. Never retry to get around a refusal.
+7. `get_activity` says what changed recently and who did it.
