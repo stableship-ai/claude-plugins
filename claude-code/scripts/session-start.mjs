@@ -83,6 +83,11 @@ export function rulesLine(repo, body) {
   return `Stableship: ${n} rule${n === 1 ? '' : 's'} say${n === 1 ? 's' : ''} who may see and change what in ${repo}. The get_rules tool lists them (a copy lives in .gate/rules.md once the rules pull request is merged); the stableship skill covers changing auth, data access, payments or migrations.\n`;
 }
 
+/** The hello every session sends (GET /api/v1/whoami). Pure. */
+export function whoamiUrl(apiUrl) {
+  return `${apiBase(apiUrl)}/api/v1/whoami`;
+}
+
 export const LOGIN_HINT_EVERY_MS = 7 * 24 * 3600_000;
 /**
  * Without a saved login the hooks can't read anything (the plugin's tools sign in through Claude Code, the hooks
@@ -100,9 +105,12 @@ export function loginHint(now, lastShown) {
 async function main() {
   const token = apiToken();
   const input = parseHookInput(await readStdin(1000));
+  // Every session says hello, in any folder: that is how Stableship knows Claude Code is connected (setup's coding-agent
+  // step turns green on it). Silent, and it never holds up the session beyond the fetch timeout.
+  const hello = token ? getJson(whoamiUrl(process.env.STABLESHIP_API_URL), token, FETCH_TIMEOUT_MS) : Promise.resolve(null);
   const remote = await gitRemote(input.cwd ?? process.cwd());
   const repo = remote ? parseGitRemote(remote) : null;
-  if (!repo) return '';
+  if (!repo) { await hello; return ''; }
   if (!token) {
     const seen = readState('login-hint');
     const hint = loginHint(Date.now(), seen.shownAt);
@@ -117,6 +125,7 @@ async function main() {
   const [findings, rules] = await Promise.all([
     getJson(findingsUrl(process.env.STABLESHIP_API_URL, repo), token, FETCH_TIMEOUT_MS),
     getJson(rulesUrl(process.env.STABLESHIP_API_URL, repo), token, FETCH_TIMEOUT_MS),
+    hello,
   ]);
   return summarize(repo, findings?.findings) + rulesLine(repo, rules);
 }
