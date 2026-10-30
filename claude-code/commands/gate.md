@@ -111,23 +111,29 @@ Report for this repo's project, briefly:
 1. Call `get_findings` for the project with `blocking_only: true`. If the user named a finding id,
    work only on that one (it may be non-blocking; that is fine if they asked for it). If nothing
    blocks and no id was named, say there is nothing to fix and stop. If the user asked to fix
-   everything (or the repo has `STABLESHIP_FIXES.md`), call `get_fix_plan` instead and work
-   through its tasks in order, blocking ones first. Call `get_known_issues` once: a finding a
-   person accepted as a known issue needs no fix unless the user asks; say so and skip it.
-2. For each finding, one at a time:
-   1. Call `get_fix_brief`. Read `plainEnglish`, `ruleBroken`, `whereToLook`, `repro` and
-      `acceptanceCriteria`. If the brief is unclear about why it blocks, call `explain_finding`.
-   2. Find the cause in the code, starting from `whereToLook`. Make the smallest change that
-      meets every acceptance criterion. Add or update a test that would have caught it when the
-      project has tests.
-   3. Tell the user what you changed and why, in two or three sentences.
-3. `verify_fix` re-checks code on GitHub, so the fix must be committed and pushed first. Ask the
+   everything (or the repo has `STABLESHIP_FIXES.md`), call `get_fix_plan` instead. Call
+   `get_known_issues` once: a finding a person accepted as a known issue needs no fix unless the
+   user asks; say so and skip it.
+2. Before editing, find each cause. Call `get_fix_brief` (or read the task in the plan): its
+   `plainEnglish`, `ruleBroken`, `whereToLook`, `repro` and `acceptanceCriteria`. If it is unclear
+   why it blocks, call `explain_finding`. `whereToLook` is where the problem showed up, not always
+   where it starts: trace it through the components, queries, API routes, RLS policies and
+   migrations involved, and the live database if the Supabase tools are connected.
+3. When there is more than one finding, show the user a short plan before changing code: findings
+   grouped by shared cause (the fix plan lists likely groups), blocking ones first, the files and
+   migrations each fix touches, and anything that would change who can see or do what (that goes
+   through `propose_rule`). Skip asking if the user already told you to go ahead.
+4. For each cause, one at a time: make the smallest change that meets every acceptance criterion
+   of the findings it closes, with no unrelated refactors. Add or update a test that would have
+   caught it when the project has tests. Tell the user what you changed and why, in two or three
+   sentences.
+5. `verify_fix` re-checks code on GitHub, so the fix must be committed and pushed first. Ask the
    user before committing or pushing unless they already told you to. Commit on the current
    branch with a clear message; never force-push and never push straight to the default branch
    without the user's say-so.
-4. Once pushed, call `verify_fix` with the finding id and the pushed commit sha, then poll
+6. Once pushed, call `verify_fix` with each finding id the fix closes and the pushed commit sha, then poll
    `get_run_status` as in **check** until `done`.
-5. Report per finding: **Fixed** (it no longer reproduces), **Still blocking** (it still
+7. Report per finding: **Fixed** (it no longer reproduces), **Still blocking** (it still
    reproduces; explain what the run found and try again only if you have a new idea), or
    **Not verified** (Stableship had an infrastructure problem; not blocking; offer `rerun_gate`).
 

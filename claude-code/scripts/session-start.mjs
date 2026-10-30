@@ -9,7 +9,7 @@
  */
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { apiBase, clean, getJson, gitRemote, parseGitRemote, readState, readStdin, writeState, apiToken } from './lib.mjs';
+import { apiBase, clean, getJson, getJsonStatus, gitRemote, parseGitRemote, readState, readStdin, writeState, apiToken } from './lib.mjs';
 
 export { DEFAULT_API_URL, parseGitRemote } from './lib.mjs';
 export const FETCH_TIMEOUT_MS = 2500;
@@ -68,6 +68,7 @@ export function summarize(repo, findings) {
   if (n > MAX_LISTED) lines.push(`- …and ${n - MAX_LISTED} more.`);
   lines.push(
     'The /stableship:gate fix command fixes and verifies them; the get_fix_brief tool returns the fix brief for one finding, and explain_finding says why one blocks.',
+    'When the user asks to fix them ("fix them", "fix the audit", "work through the findings"), call get_fix_plan and work through its tasks in order, then verify_fix each one.',
   );
   return `${lines.join('\n')}\n`;
 }
@@ -81,6 +82,19 @@ export function rulesLine(repo, body) {
   const n = Array.isArray(body?.rules) ? body.rules.length : 0;
   if (n === 0) return '';
   return `Stableship: ${n} rule${n === 1 ? '' : 's'} say${n === 1 ? 's' : ''} who may see and change what in ${repo}. The get_rules tool lists them (a copy lives in .gate/rules.md once the rules pull request is merged); the stableship skill covers changing auth, data access, payments or migrations.\n`;
+}
+
+export const UNLINKED_HINT_EVERY_MS = 7 * 24 * 3600_000;
+/**
+ * A repository no Stableship app uses: said once a week, so the user knows why no findings or rules show up. Pure.
+ * @param {string} repo
+ * @param {number} now
+ * @param {unknown} lastShown
+ */
+export function unlinkedLine(repo, now, lastShown) {
+  const last = typeof lastShown === 'string' ? Date.parse(lastShown) : NaN;
+  if (Number.isFinite(last) && now - last < UNLINKED_HINT_EVERY_MS) return '';
+  return `Stableship: ${repo} isn't linked to a Stableship app in this workspace, so its findings and rules won't show up here. If it belongs to an app, link it in Stableship's Settings → Repositories; otherwise this is expected. Mention it once.\n`;
 }
 
 /** The hello every session sends (GET /api/v1/whoami). Pure. */
@@ -122,12 +136,20 @@ async function main() {
   const state = readState(sessionId);
   writeState(sessionId, { ...state, repo, startedAt: typeof state.startedAt === 'string' && state.repo === repo ? state.startedAt : new Date().toISOString(), rulesShown: {} });
   // Both at once, so the hook still finishes within one timeout.
-  const [findings, rules] = await Promise.all([
-    getJson(findingsUrl(process.env.STABLESHIP_API_URL, repo), token, FETCH_TIMEOUT_MS),
+  const [found, rules] = await Promise.all([
+    getJsonStatus(findingsUrl(process.env.STABLESHIP_API_URL, repo), token, FETCH_TIMEOUT_MS),
     getJson(rulesUrl(process.env.STABLESHIP_API_URL, repo), token, FETCH_TIMEOUT_MS),
     hello,
   ]);
-  return summarize(repo, findings?.findings) + rulesLine(repo, rules);
+  if (found.status === 404) {
+    // Not linked: the inbox stops polling this session, and the user hears why once a week.
+    writeState(sessionId, { ...readState(sessionId), unlinked: true });
+    const shown = readState('unlinked-hint');
+    const line = unlinkedLine(repo, Date.now(), shown[repo]);
+    if (line) writeState('unlinked-hint', { ...shown, [repo]: new Date().toISOString() });
+    return line;
+  }
+  return summarize(repo, found.body?.findings) + rulesLine(repo, rules);
 }
 
 function isEntryPoint() {

@@ -60,6 +60,8 @@ async function main(final) {
   const state = readState(sessionId);
   const now = Date.now();
   if (!final && !mayPoll(state, now)) return '';
+  // A repository no Stableship app uses: nothing to poll (session-start said so once).
+  if (state.unlinked) return '';
   const remote = state.repo ? null : await gitRemote(input.cwd ?? process.cwd());
   const repo = (typeof state.repo === 'string' ? state.repo : null) ?? (remote ? parseGitRemote(remote) : null);
   if (!repo) return '';

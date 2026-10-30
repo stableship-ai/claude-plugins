@@ -1,8 +1,8 @@
 ---
 name: stableship
 description: Keep an app inside its Stableship rules while changing it. Use before changing auth, sign-in, who can see or change data, row level security, Supabase tables or migrations, payments, or API routes; before pushing a risky change; when a Stableship finding blocks a release; and when fixing Stableship findings. Covers reading the rules for the file you are editing, proposing rule changes, running scoped checks, explaining why something blocks, and fixing findings in order.
-when_to_use: The repo is connected to Stableship (the stableship MCP tools answer for it, or it has a .gate/rules.md). Triggers include "add a table", "change permissions", "add an admin page", "fix the Stableship findings", "why does this block", "is this safe to ship".
-allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__request_fix mcp__plugin_stableship_stableship__request_fixes_pr mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach mcp__plugin_stableship_stableship__create_app mcp__plugin_stableship_stableship__link_repo
+when_to_use: The repo is connected to Stableship (the stableship MCP tools answer for it, or it has a .gate/rules.md). Triggers include "add a table", "change permissions", "add an admin page", "fix the Stableship findings", "work through the open Stableship findings", "why does this block", "is this safe to ship".
+allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__retest_untested mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__request_fix mcp__plugin_stableship_stableship__request_fixes_pr mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach mcp__plugin_stableship_stableship__create_app mcp__plugin_stableship_stableship__link_repo
 ---
 
 # Working inside Stableship's rules
@@ -66,6 +66,8 @@ asking for less runs at the minimum and the result's `message` says so. Narrow w
 `get_run_status` every 20-30 seconds until `done`. Report the verdict. `block` means the release
 would be held: fix it before moving on. Runs that end `failed_infra`, `timed_out` or `cancelled`
 are Stableship's own problem and never block; `rerun_gate` repeats one.
+After an audit, when its report lists flows it could not test (often because setup was missing,
+such as a payment test key), `retest_untested` runs just those once the gap is fixed.
 
 ## When something blocks and the user asks why
 
@@ -77,12 +79,22 @@ accept a risk or mark a false positive in Stableship; `get_known_issues` lists t
 
 ## Fixing findings
 
-1. Call `get_fix_plan` and work through it in order. If it is not available, call `get_findings`
-   with `blocking_only=true`, then `get_fix_brief` for each finding. Skip findings listed by
-   `get_known_issues` as accepted unless the user asks.
-2. For each one: make the smallest change that meets every acceptance criterion in its brief, push
-   it, call `verify_fix`, and poll `get_run_status` until done before starting the next.
-3. Never weaken, skip or delete tests, RLS policies, auth checks or validation to make a finding
+1. Call `get_fix_plan`. If it is not available, call `get_findings` with `blocking_only=true`,
+   then `get_fix_brief` for each finding. Skip findings listed by `get_known_issues` as accepted
+   unless the user asks.
+2. **Find each cause before you edit.** A task's "Where" is where the problem showed up (a page,
+   route, table or file), not always where it starts. Trace it through the components, queries,
+   API routes, RLS policies and migrations involved. With the Supabase tools, read the live
+   tables and policies too: they may not match the migrations. Reproduced and confirmed findings
+   are real; check suspected ones first and say so if one is not.
+3. **Plan, then ask.** Group tasks that share a cause (the plan lists likely groups), order the
+   groups blocking first, and name the files and migrations each fix touches and anything that
+   would change who can see or do what. Show the user that plan before changing code, unless
+   they already told you to go ahead. Access changes go through `propose_rule`, never the code alone.
+4. **Fix one cause at a time:** the smallest change that meets every acceptance criterion of the
+   tasks it closes, with no unrelated refactors. Push it, call `verify_fix` for each finding it
+   closes, and poll `get_run_status` until done before starting the next.
+5. Never weaken, skip or delete tests, RLS policies, auth checks or validation to make a finding
    go away. Never read or print `.env` files or secrets.
 
 ## Running Stableship for the user

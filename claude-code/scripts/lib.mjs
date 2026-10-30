@@ -63,6 +63,23 @@ export async function getJson(url, token, timeoutMs = FETCH_TIMEOUT_MS) {
   }
 }
 
+/**
+ * Like getJson, with the HTTP status: 404 means this repository is not linked to a Stableship app (the API says "no
+ * project in this workspace uses …"), which the hooks say once instead of staying silent. Status 0: unreachable.
+ * @returns {Promise<{ status: number, body: any }>}
+ */
+export async function getJsonStatus(url, token, timeoutMs = FETCH_TIMEOUT_MS) {
+  try {
+    const res = await fetch(url, {
+      headers: { authorization: `Bearer ${token}`, accept: 'application/json', 'user-agent': 'stableship-claude-code-plugin' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    return { status: res.status, body: res.ok ? await res.json() : null };
+  } catch {
+    return { status: 0, body: null };
+  }
+}
+
 /** The hook's JSON input from stdin; {} when unreadable. */
 export function readStdin(timeoutMs = 1000) {
   return new Promise((resolve) => {
