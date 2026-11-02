@@ -81,7 +81,7 @@ export function summarize(repo, findings) {
 export function rulesLine(repo, body) {
   const n = Array.isArray(body?.rules) ? body.rules.length : 0;
   if (n === 0) return '';
-  return `Stableship: ${n} rule${n === 1 ? '' : 's'} say${n === 1 ? 's' : ''} who may see and change what in ${repo}. The get_rules tool lists them (a copy lives in .gate/rules.md once the rules pull request is merged); the stableship skill covers changing auth, data access, payments or migrations.\n`;
+  return `Stableship: ${n} rule${n === 1 ? '' : 's'} say${n === 1 ? 's' : ''} who may see and change what in ${repo}. The get_rules tool lists them (get_repo_files gives .gate/rules.md to commit yourself); the stableship skill covers changing auth, data access, payments or migrations.\n`;
 }
 
 export const UNLINKED_HINT_EVERY_MS = 7 * 24 * 3600_000;
