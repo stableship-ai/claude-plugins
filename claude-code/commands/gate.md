@@ -64,13 +64,12 @@ Read the first word of the arguments above.
 
 ### setup
 
-Run `npx --yes @stableship/cli@latest init` with Bash. It prints a link and a code: tell the user to open
-the link, sign in or sign up, and approve the code (it waits up to 15 minutes, so keep the command running).
-It then adds Stableship to Claude Code and prints step 3: what this repository still needs in Stableship
-(install the GitHub app, finish setup, or start a plan), with a link. Pass that step on in one or two
-sentences with the link, and say setup, rules and these tools are free; testing the app needs a plan. If it
-added Stableship to Claude Code, say to start a new Claude Code session so the tools load. Running it again
-is safe: it skips what is done.
+Do not run anything yourself. Ask the user to run `npx --yes @stableship/cli@latest init` in their own
+terminal (from this repository): it prints a link and a code to open and approve, adds Stableship to Claude
+Code, and prints what this repository still needs in Stableship (install the GitHub app, finish setup, or
+start a plan), with a link. Say setup, rules and these tools are free; testing the app needs a plan, and that
+they start a new Claude Code session afterwards so the tools load. Running it again is safe: it skips what is
+done. If they would rather not use a terminal, they can sign the Stableship server in from /mcp instead.
 
 ### status
 
