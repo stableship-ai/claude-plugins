@@ -8,6 +8,10 @@
     "url": "https://stableship.ai"
   },
   "homepage": "https://stableship.ai",
+  "documentationUrl": "https://stableship.ai/docs",
+  "privacyPolicyUrl": "https://stableship.ai/privacy",
+  "termsOfServiceUrl": "https://stableship.ai/terms",
+  "icon": "./.claude-plugin/icon.png",
   "repository": "https://github.com/stableship-ai/claude-plugins",
   "license": "MIT",
   "keywords": [
