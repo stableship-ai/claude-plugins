@@ -25,7 +25,7 @@
   "mcpServers": {
     "stableship": {
       "type": "http",
-      "url": "${STABLESHIP_API_URL:-https://api.stableship.ai}/mcp",
+      "url": "https://api.stableship.ai/mcp",
       "headersHelper": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/mcp-headers.mjs\""
     }
   }
