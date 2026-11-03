@@ -2,7 +2,7 @@
 name: stableship
 description: Keep an app inside its Stableship rules while changing it. Use before changing auth, sign-in, who can see or change data, row level security, Supabase tables or migrations, payments, or API routes; before pushing a risky change; when a Stableship finding blocks a release; and when fixing Stableship findings. Covers reading the rules for the file you are editing, proposing rule changes, running scoped checks, explaining why something blocks, and fixing findings in order.
 when_to_use: The repo is connected to Stableship (the stableship MCP tools answer for it, or it has a .gate/rules.md). Triggers include "add a table", "change permissions", "add an admin page", "fix the Stableship findings", "work through the open Stableship findings", "why does this block", "is this safe to ship".
-allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__retest_untested mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__get_repo_files mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach mcp__plugin_stableship_stableship__create_app mcp__plugin_stableship_stableship__link_repo
+allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__retest_untested mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_flow mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__get_repo_files mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach mcp__plugin_stableship_stableship__create_app mcp__plugin_stableship_stableship__link_repo
 ---
 
 # Working inside Stableship's rules
@@ -47,6 +47,12 @@ something work. Call `propose_rule` with `resource`, `action`, `allowed` (role k
 `get_context`, or `owner`, `signed_in`, `public`) and a `reason` the founder will read. A rule
 that only adds a check may apply at once; anything that lets more people in waits for the founder.
 Until it is accepted, keep the current rules in code and tell the user it is waiting.
+
+When you build something people will rely on (a new page, a checkout step, inviting a teammate), call
+`add_flow` with a `title`, the page it `start`s on, the `roles` who do it, the `steps` and what
+`success` looks like, and a `reason`, so every check clicks through it from now on. Set `critical`
+only for sign-in, payments and the app's main action. A rule decides who may do something; a flow
+checks that it works. The founder sees and edits both under Tests.
 
 ## Product facts
 
@@ -100,7 +106,8 @@ accept a risk or mark a false positive in Stableship; `get_known_issues` lists t
 ## Running Stableship for the user
 
 The user can run Stableship entirely from here; the app is optional. At the start of a session,
-`whoami` says which projects this token sees and whether it has the manage scope.
+`whoami` says which projects this token sees and whether it has the manage scope. When it returns `versions.updateNotice`,
+pass that on to the user once.
 
 1. **What now?** After an audit, `get_next_steps` gives how it went, what was covered, and what to
    fix first, grouped by cause. Tell the user in two or three sentences, then offer to start on

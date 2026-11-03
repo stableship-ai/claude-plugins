@@ -4,7 +4,7 @@
 // Claude Code signs in with OAuth as before. Never fails: anything unexpected prints {}.
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { apiBase, apiToken } from './lib.mjs';
+import { apiBase, apiToken, PLUGIN_VERSION, USER_AGENT } from './lib.mjs';
 
 /**
  * The headers for this connection. A token the API refuses (401/403) is left out so OAuth can take over; an
@@ -18,7 +18,7 @@ export async function headersFor(token, apiUrl, fetchImpl = fetch) {
   if (!token) return {};
   try {
     const res = await fetchImpl(`${apiBase(apiUrl)}/api/v1/whoami`, {
-      headers: { authorization: `Bearer ${token}`, accept: 'application/json', 'user-agent': 'stableship-claude-code-plugin' },
+      headers: { authorization: `Bearer ${token}`, accept: 'application/json', 'user-agent': USER_AGENT },
       signal: AbortSignal.timeout(3000),
     });
     if (res.status === 401 || res.status === 403) return {};
@@ -26,6 +26,18 @@ export async function headersFor(token, apiUrl, fetchImpl = fetch) {
     // Unreachable: keep the token.
   }
   return { Authorization: `Bearer ${token}` };
+}
+
+/**
+ * Every header for the MCP connection: the sign-in from headersFor, and the plugin's version, so Stableship knows which
+ * plugin is talking (Claude Code's own client name does not say) and can tell the user when a newer one is out.
+ * @param {string} token
+ * @param {string | undefined} apiUrl
+ * @param {typeof fetch} fetchImpl
+ */
+export async function connectionHeaders(token, apiUrl, fetchImpl = fetch) {
+  const auth = await headersFor(token, apiUrl, fetchImpl);
+  return PLUGIN_VERSION ? { ...auth, 'X-Stableship-Plugin': PLUGIN_VERSION } : auth;
 }
 
 function isEntryPoint() {
@@ -37,7 +49,7 @@ function isEntryPoint() {
 }
 
 if (isEntryPoint()) {
-  headersFor(apiToken(), process.env.STABLESHIP_API_URL)
+  connectionHeaders(apiToken(), process.env.STABLESHIP_API_URL)
     .then((h) => process.stdout.write(JSON.stringify(h)))
     .catch(() => process.stdout.write('{}'));
 }

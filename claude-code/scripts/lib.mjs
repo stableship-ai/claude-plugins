@@ -9,6 +9,12 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 export const DEFAULT_API_URL = 'https://api.stableship.ai';
+
+/** This plugin's version (its plugin.json), sent with every call so Stableship can say when a newer one is out. */
+export const PLUGIN_VERSION = (() => {
+  try { return String(JSON.parse(readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8')).version ?? ''); } catch { return ''; }
+})();
+export const USER_AGENT = PLUGIN_VERSION ? `stableship-claude-code-plugin/${PLUGIN_VERSION}` : 'stableship-claude-code-plugin';
 export const FETCH_TIMEOUT_MS = 2000;
 /** The rules for one area are shown once per this many minutes per session. */
 export const RULES_TTL_MS = 10 * 60_000;
@@ -54,7 +60,7 @@ export function apiBase(apiUrl) {
 export async function getJson(url, token, timeoutMs = FETCH_TIMEOUT_MS) {
   try {
     const res = await fetch(url, {
-      headers: { authorization: `Bearer ${token}`, accept: 'application/json', 'user-agent': 'stableship-claude-code-plugin' },
+      headers: { authorization: `Bearer ${token}`, accept: 'application/json', 'user-agent': USER_AGENT },
       signal: AbortSignal.timeout(timeoutMs),
     });
     return res.ok ? await res.json() : null;
@@ -71,7 +77,7 @@ export async function getJson(url, token, timeoutMs = FETCH_TIMEOUT_MS) {
 export async function getJsonStatus(url, token, timeoutMs = FETCH_TIMEOUT_MS) {
   try {
     const res = await fetch(url, {
-      headers: { authorization: `Bearer ${token}`, accept: 'application/json', 'user-agent': 'stableship-claude-code-plugin' },
+      headers: { authorization: `Bearer ${token}`, accept: 'application/json', 'user-agent': USER_AGENT },
       signal: AbortSignal.timeout(timeoutMs),
     });
     return { status: res.status, body: res.ok ? await res.json() : null };

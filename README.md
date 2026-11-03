@@ -6,7 +6,7 @@ Stableship is a QA and security gate for AI-built apps. This plugin brings it in
   with your API token. Tools: `list_projects`, `get_findings`, `get_fix_brief`, `explain_finding`,
   `run_check`, `run_audit`, `get_audit_status`, `rerun_gate`, `get_run_status`, `verify_fix`, `get_rules`,
   `get_scope_policy`, `get_known_issues`, `get_fix_plan`, `get_report`, `get_context`,
-  `propose_rule`, `add_context_note`, `get_setup`, `get_launch_report`.
+  `propose_rule`, `add_flow`, `add_context_note`, `get_setup`, `get_launch_report`.
 - **`stableship` skill** (`skills/stableship/SKILL.md`). Claude loads it on its own before it
   changes auth, data access, payments or migrations: read the rules, give every new Supabase table
   row level security, never put the service-role key in client code, propose rule changes instead
