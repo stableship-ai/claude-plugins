@@ -1,6 +1,6 @@
 # Stableship plugin for Claude Code
 
-Stableship is a QA and security gate for AI-built apps. This plugin brings it into Claude Code:
+Stableship is a QA and security gate for AI-built apps. Docs: https://stableship.ai/docs/agents/claude-code. This plugin brings it into Claude Code:
 
 - **MCP server.** Connects Claude to the Stableship MCP server (`https://api.stableship.ai/mcp`)
   with your API token. Tools: `list_projects`, `get_findings`, `get_fix_brief`, `explain_finding`,

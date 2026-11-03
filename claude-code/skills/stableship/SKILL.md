@@ -53,7 +53,7 @@ When you build something people will rely on (a new page, a checkout step, invit
 `add_flow` with a `title`, the page it `start`s on, the `roles` who do it, the `steps` and what
 `success` looks like, and a `reason`, so every check clicks through it from now on. Set `critical`
 only for sign-in, payments and the app's main action. A rule decides who may do something; a flow
-checks that it works. The founder sees and edits both under Tests.
+checks that it works. The founder sees and edits flows under Flows and rules under Access.
 
 ## Product facts
 
@@ -129,7 +129,7 @@ pass that on to the user once.
    tell the user, never work around it.
 6. **Decisions that lower protection** ask the user every time, never you alone: marking a finding
    a false positive or an accepted risk (triage_finding), shipping anyway, accepting a change to who may see what (decide_rule_suggestion), loosening a policy
-   (set_policy), more autonomy (set_autonomy), removing a kind of user (remove_role), leaving a
+   (set_policy), more autonomy (set_autonomy), removing a kind of user (remove_role) or a rule (remove_rule), leaving a
    service out of testing (set_service) and sharing a report (share_report). Explain what it does
    and why before calling one. When the answer is `pending_approval`, a person decides in
    Stableship: tell the user, and check `get_approval` later. Never retry to get around a refusal.
