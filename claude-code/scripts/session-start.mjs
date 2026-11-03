@@ -112,7 +112,7 @@ export const LOGIN_HINT_EVERY_MS = 7 * 24 * 3600_000;
 export function loginHint(now, lastShown) {
   const last = typeof lastShown === 'string' ? Date.parse(lastShown) : NaN;
   if (Number.isFinite(last) && now - last < LOGIN_HINT_EVERY_MS) return '';
-  return 'Stableship: the plugin\'s hooks are off on this machine because nothing is signed in for them, so blocking findings and check results will not show up in sessions. The Stableship tools still work. Mention once that running `npx --yes @stableship/cli@latest login` (it opens the browser to approve) turns the hooks on.\n';
+  return 'Stableship: the plugin\'s hooks are off on this machine because nothing is signed in for them, so blocking findings and check results will not show up in sessions. The Stableship tools still work. Mention once that the user can turn the hooks on by running `npx --yes @stableship/cli@latest login` in their own terminal (it opens the browser to approve); do not run it yourself.\n';
 }
 
 /** @returns {Promise<string>} the context text, or '' to stay silent */

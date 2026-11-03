@@ -33,7 +33,7 @@ The plugin's MCP server signs in with OAuth: no token to copy.
    **Authenticate**. Your browser opens app.stableship.ai: sign in (or sign up), pick the workspace and
    approve. Disconnect it any time in Stableship under **Settings → Connected apps**.
 2. The hooks (rules before edits, run tracking) use a token: `STABLESHIP_TOKEN` if you export one, otherwise
-   the one `npx @stableship/cli login` saved. `/stableship:gate setup` does that sign-in for you.
+   the one `npx @stableship/cli login` saved. `/stableship:gate setup` gives you the command to run in your terminal.
 
 Optional: `STABLESHIP_API_URL` points the MCP server and the hook at another API (default
 `https://api.stableship.ai`), e.g. a staging server.
