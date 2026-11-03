@@ -25,7 +25,7 @@ check.
 
 The Stableship tools come from this plugin's `stableship` MCP server: `list_projects`,
 `get_findings`, `get_fix_brief`, `run_check`, `get_run_status`, `verify_fix`, `rerun_gate`,
-`explain_finding` (why a finding blocks, or why a run came out as it did), `get_rules` (pass
+`explain_finding` (why a finding blocks, or why a run came out as it did), `get_rules` (give it
 `path` for the rules that concern one file), `get_scope_policy`, `get_known_issues`,
 `get_fix_plan` (every open finding as ordered tasks), `get_report` (an audit in plain English),
 `get_context`, `propose_rule`, `add_flow`, `add_context_note`, `get_setup`, `run_audit`, `get_audit_status` and
@@ -86,8 +86,8 @@ Report for this repo's project, briefly:
 1. Run `git rev-parse --abbrev-ref HEAD`, `git rev-parse HEAD` and
    `git status --porcelain=v2 --branch`.
 2. Stableship checks what is on GitHub, not local files. If the branch has an upstream and is
-   not ahead of it (`# branch.ab +0 ...`), pass both `branch` and `commit_sha` = HEAD. Otherwise
-   pass `branch` only, and tell the user that unpushed commits and uncommitted changes are not
+   not ahead of it (`# branch.ab +0 ...`), send both `branch` and `commit_sha` = HEAD. Otherwise
+   send `branch` only, and tell the user that unpushed commits and uncommitted changes are not
    part of this check. Do not commit or push to make a check possible unless the user asks.
 3. Call `run_check` with the project id, the ref, `scope` (the scope word, or omit it for auto),
    and `role` (from `--as`; a role key from `get_rules`, or `signed_out`), `flow` (from

@@ -7,13 +7,11 @@ import { execFile } from 'node:child_process';
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { PLUGIN_VERSION } from './version.mjs';
 
 export const DEFAULT_API_URL = 'https://api.stableship.ai';
 
-/** This plugin's version (its plugin.json), sent with every call so Stableship can say when a newer one is out. */
-export const PLUGIN_VERSION = (() => {
-  try { return String(JSON.parse(readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8')).version ?? ''); } catch { return ''; }
-})();
+export { PLUGIN_VERSION };
 export const USER_AGENT = PLUGIN_VERSION ? `stableship-claude-code-plugin/${PLUGIN_VERSION}` : 'stableship-claude-code-plugin';
 export const FETCH_TIMEOUT_MS = 2000;
 /** The rules for one area are shown once per this many minutes per session. */
