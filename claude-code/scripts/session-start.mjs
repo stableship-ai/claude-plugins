@@ -5,7 +5,8 @@
  * SessionStart stdout to Claude's context. It also starts the session's state file (the repository and the start
  * time), which the prevention and inbox hooks read. It must never get in the way: no GitHub remote, offline, a slow
  * API or any error all mean "print nothing and exit 0". With no saved login it says so, at most once a week (the hooks
- * can't do anything without one). No dependencies, Node 22+ only.
+ * can't do anything without one); with a login Stableship rejects (401: expired or revoked), at most once a day. No
+ * dependencies, Node 22+ only.
  */
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -115,13 +116,30 @@ export function loginHint(now, lastShown) {
   return 'Stableship: the plugin\'s hooks are off on this machine because nothing is signed in for them, so blocking findings and check results will not show up in sessions. The Stableship tools still work. Mention once that the user can turn the hooks on by running `npx --yes @stableship/cli@latest login` in their own terminal (it opens the browser to approve); do not run it yourself.\n';
 }
 
+export const REJECTED_HINT_EVERY_MS = 24 * 3600_000;
+/**
+ * The login the hooks use was refused (401: expired, revoked, or the token was deleted), so they go quiet. Said at most
+ * once a day, in a repository. Pure.
+ * @param {number} now
+ * @param {unknown} lastShown  ISO time it was last said, if ever
+ * @param {boolean} fromEnv  the token came from STABLESHIP_TOKEN rather than the saved login
+ */
+export function rejectedLoginHint(now, lastShown, fromEnv = false) {
+  const last = typeof lastShown === 'string' ? Date.parse(lastShown) : NaN;
+  if (Number.isFinite(last) && now - last < REJECTED_HINT_EVERY_MS) return '';
+  const which = fromEnv ? 'the token in STABLESHIP_TOKEN' : 'the saved Stableship login';
+  const unset = fromEnv ? ' (STABLESHIP_TOKEN wins over the saved login, so they should also update or unset it)' : '';
+  return `Stableship: the plugin's hooks are off on this machine because Stableship rejected ${which} (it expired or was revoked), so blocking findings and check results will not show up in sessions. Mention once that the user can sign in again by running \`npx --yes @stableship/cli@latest login\` in their own terminal (it opens the browser to approve)${unset}; do not run it yourself.\n`;
+}
+
 /** @returns {Promise<string>} the context text, or '' to stay silent */
 async function main() {
   const token = apiToken();
   const input = parseHookInput(await readStdin(1000));
   // Every session says hello, in any folder: that is how Stableship knows Claude Code is connected (setup's coding-agent
   // step turns green on it). Silent, and it never holds up the session beyond the fetch timeout.
-  const hello = token ? getJson(whoamiUrl(process.env.STABLESHIP_API_URL), token, FETCH_TIMEOUT_MS) : Promise.resolve(null);
+  // Its status also says whether the login still works (401: refused).
+  const hello = token ? getJsonStatus(whoamiUrl(process.env.STABLESHIP_API_URL), token, FETCH_TIMEOUT_MS) : Promise.resolve(null);
   const remote = await gitRemote(input.cwd ?? process.cwd());
   const repo = remote ? parseGitRemote(remote) : null;
   if (!repo) { await hello; return ''; }
@@ -136,11 +154,17 @@ async function main() {
   const state = readState(sessionId);
   writeState(sessionId, { ...state, repo, startedAt: typeof state.startedAt === 'string' && state.repo === repo ? state.startedAt : new Date().toISOString(), rulesShown: {} });
   // Both at once, so the hook still finishes within one timeout.
-  const [found, rules] = await Promise.all([
+  const [found, rules, hi] = await Promise.all([
     getJsonStatus(findingsUrl(process.env.STABLESHIP_API_URL, repo), token, FETCH_TIMEOUT_MS),
     getJson(rulesUrl(process.env.STABLESHIP_API_URL, repo), token, FETCH_TIMEOUT_MS),
     hello,
   ]);
+  if (found.status === 401 || hi?.status === 401) {
+    const seen = readState('rejected-hint');
+    const hint = rejectedLoginHint(Date.now(), seen.shownAt, Boolean(process.env.STABLESHIP_TOKEN && process.env.STABLESHIP_TOKEN.trim()));
+    if (hint) writeState('rejected-hint', { shownAt: new Date().toISOString() });
+    return hint;
+  }
   if (found.status === 404) {
     // Not linked: the inbox stops polling this session, and the user hears why once a week.
     writeState(sessionId, { ...readState(sessionId), unlinked: true });

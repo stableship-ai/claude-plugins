@@ -3,7 +3,9 @@
 Copy the section below into `AGENTS.md` (Codex and other agents that read it), your Cursor or
 Windsurf rules file, or any agent's project instructions. It is the same workflow as the Claude
 Code plugin's `stableship` skill, for agents that connect to the Stableship MCP server
-(`https://api.stableship.ai/mcp`) without the plugin.
+(`https://api.stableship.ai/mcp`) without the plugin. Stableship's `get_repo_files` returns a
+shorter section with the project's own rules, ready for `AGENTS.md`, `.cursor/rules/stableship.mdc`,
+`GEMINI.md`, `.github/copilot-instructions.md` and `.windsurf/rules/stableship.md`.
 
 ---
 
@@ -22,27 +24,29 @@ API route and the row level security policy.
 in the same migration. Never use the service-role key in client code (anything bundled for the
 browser, including `NEXT_PUBLIC_*` and `VITE_*` variables). Check ownership with `auth.uid()`.
 
-**Changing access.** Never change who can access what on your own and never loosen a policy or
-check to make something work. Call `propose_rule` with `resource`, `action`, `allowed` (role keys
+**Changing access.** Never change who can see or do what beyond the rules: ask the person first and say why.
+Never loosen a policy or check to make something work. Call `propose_rule` with `resource`, `action`, `allowed` (role keys
 from `get_context`, or `owner`, `signed_in`, `public`) and a `reason`. Until the founder accepts
 it, keep the current rules in code.
 
 **Product facts.** Save lasting facts future sessions need with `add_context_note`: one fact,
 plain words, no secrets or personal data.
 
-**Before pushing a risky change**, push it (after the user agrees), call `run_check` with the
-pushed commit and branch and poll `get_run_status` every 20-30 seconds until `done`. Leave
-`scope` out to let the change decide; the project's path rules set a minimum you cannot go
-below. Narrow with `flow`, `role` or `endpoint` when you changed only that. `block` means the
-release would be held; `explain_finding` says why. Runs that end `failed_infra`, `timed_out` or
-`cancelled` never block; `rerun_gate` repeats one.
+**Pushing a risky change.** Push it after the user agrees. Don't call `run_check` to re-test a push or confirm a fix: pushes are checked on their own.
+Call `run_check` with the pushed commit and branch only for a check the push does not give you:
+a wider `scope`, or one narrowed with `flow`, `role` or `endpoint`; the project's path rules set
+a minimum you cannot go below. Wait with `get_run_status` and `wait_seconds`, not a fixed polling timer.
+`block` means the release would be held; `explain_finding` says why. Runs that end
+`failed_infra`, `timed_out` or `cancelled` never block; `rerun_gate` repeats one.
 
 **Before editing a file** that concerns sign-in, data access, payments or the database, call
 `get_rules` with `path` set to that file for just the rules that apply to it.
 
 **Fixing findings.** Work through `get_fix_plan` in order (or `get_findings` with
 `blocking_only=true`, then `get_fix_brief` per finding). Skip anything `get_known_issues` lists as an accepted
-risk unless the user asks. Make the smallest change that meets every acceptance criterion, push,
-call `verify_fix`, and wait for the result before the next one. Never
+risk unless the user asks. Find each cause, group the tasks one fix closes, and fix one cause at a
+time with the smallest change that meets every acceptance criterion. Stableship tests the code on GitHub, so push before you verify.
+Verify once per push, with every finding id it closes: `verify_fix` with `finding_ids`, or `stableship verify <id> <id>…`.
+Wait for the result before the next cause. Never
 weaken tests, RLS policies, auth checks or validation to make a finding go away, and never read
 `.env` files.

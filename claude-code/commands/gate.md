@@ -1,7 +1,7 @@
 ---
 description: Stableship release gate. setup signs in and connects this repo; status shows verdicts; check [quick|security|qa|full] [--as role] [--flow key] [--endpoint path] runs a check; fix fixes and verifies blocking findings; why explains a finding or a run; skip "reason" records that nothing needs checking; test <feature> writes tests from the rules and fixed findings.
 argument-hint: setup | status | check [scope] [--as <role>] [--flow <key>] [--endpoint <path>] | fix [findingId] | why <findingId|runId> | skip "<reason>" | test <feature>
-allowed-tools: mcp__plugin_stableship_stableship__list_projects, mcp__plugin_stableship_stableship__get_findings, mcp__plugin_stableship_stableship__get_fix_brief, mcp__plugin_stableship_stableship__get_run_status, mcp__plugin_stableship_stableship__get_rules, mcp__plugin_stableship_stableship__get_context, mcp__plugin_stableship_stableship__run_check, mcp__plugin_stableship_stableship__verify_fix, mcp__plugin_stableship_stableship__get_fix_plan, mcp__plugin_stableship_stableship__get_report, mcp__plugin_stableship_stableship__explain_finding, mcp__plugin_stableship_stableship__get_scope_policy, mcp__plugin_stableship_stableship__get_known_issues, mcp__plugin_stableship_stableship__rerun_gate, mcp__plugin_stableship_stableship__propose_rule, mcp__plugin_stableship_stableship__add_flow, mcp__plugin_stableship_stableship__add_context_note, mcp__plugin_stableship_stableship__get_setup, mcp__plugin_stableship_stableship__run_audit, mcp__plugin_stableship_stableship__get_audit_status, mcp__plugin_stableship_stableship__get_launch_report, Bash(git remote get-url origin), Bash(git rev-parse HEAD), Bash(git rev-parse --abbrev-ref HEAD), Bash(git status --porcelain=v2 --branch), Bash(git log -1 --format=%H), Bash(sleep 15), mcp__plugin_stableship_stableship__whoami, mcp__plugin_stableship_stableship__get_next_steps, mcp__plugin_stableship_stableship__get_activity, mcp__plugin_stableship_stableship__get_app_map, mcp__plugin_stableship_stableship__get_approval, mcp__plugin_stableship_stableship__get_repo_files, mcp__plugin_stableship_stableship__resume_held_audit, mcp__plugin_stableship_stableship__reanalyze
+allowed-tools: mcp__plugin_stableship_stableship__list_projects, mcp__plugin_stableship_stableship__get_findings, mcp__plugin_stableship_stableship__get_fix_brief, mcp__plugin_stableship_stableship__get_run_status, mcp__plugin_stableship_stableship__get_rules, mcp__plugin_stableship_stableship__get_context, mcp__plugin_stableship_stableship__run_check, mcp__plugin_stableship_stableship__verify_fix, mcp__plugin_stableship_stableship__get_fix_plan, mcp__plugin_stableship_stableship__get_report, mcp__plugin_stableship_stableship__explain_finding, mcp__plugin_stableship_stableship__get_scope_policy, mcp__plugin_stableship_stableship__get_known_issues, mcp__plugin_stableship_stableship__rerun_gate, mcp__plugin_stableship_stableship__propose_rule, mcp__plugin_stableship_stableship__add_flow, mcp__plugin_stableship_stableship__add_context_note, mcp__plugin_stableship_stableship__get_setup, mcp__plugin_stableship_stableship__run_audit, mcp__plugin_stableship_stableship__get_audit_status, mcp__plugin_stableship_stableship__get_launch_report, Bash(git remote get-url origin), Bash(git rev-parse HEAD), Bash(git rev-parse --abbrev-ref HEAD), Bash(git status --porcelain=v2 --branch), Bash(git log -1 --format=%H), mcp__plugin_stableship_stableship__whoami, mcp__plugin_stableship_stableship__get_next_steps, mcp__plugin_stableship_stableship__get_activity, mcp__plugin_stableship_stableship__get_app_map, mcp__plugin_stableship_stableship__get_approval, mcp__plugin_stableship_stableship__get_repo_files, mcp__plugin_stableship_stableship__resume_held_audit, mcp__plugin_stableship_stableship__reanalyze
 ---
 
 You are running the Stableship release gate for the repository in the current directory.
@@ -20,8 +20,10 @@ Checks have **scopes**: `quick` (build, review, saved flows replayed), `security
 API as each kind of user, security probes), `qa` (every critical flow as each kind of user) and
 `full` (both). `auto` lets the change decide. The project's path rules set a **minimum** for some
 changes (migrations, billing, auth); asking for less runs at the minimum and the result says so.
-A check can be **narrowed** to one flow, one kind of user or one endpoint; it still counts as one
-check.
+A check can be **narrowed** to one flow, one kind of user or one endpoint. Every check started with
+`run_check` (narrowed or not, unless skipped) counts as one of the app's **deep checks** this
+month; with none left it replays saved flows only. The check every push gets and `verify_fix` are
+not counted, so after a fix, push and call `verify_fix` rather than `run_check`.
 
 The Stableship tools come from this plugin's `stableship` MCP server: `list_projects`,
 `get_findings`, `get_fix_brief`, `run_check`, `get_run_status`, `verify_fix`, `rerun_gate`,
@@ -65,9 +67,10 @@ Read the first word of the arguments above.
 ### setup
 
 Do not run anything yourself. Ask the user to run `npx --yes @stableship/cli@latest init` in their own
-terminal (from this repository): it prints a link and a code to open and approve, adds Stableship to Claude
-Code, and prints what this repository still needs in Stableship (install the GitHub app, finish setup, or
-start a plan), with a link. Say setup, rules and these tools are free; testing the app needs a plan, and that
+terminal (from this repository): it prints a link and a code to open and approve, installs the Stableship
+plugin in Claude Code when the `claude` command is on that terminal's PATH (if it is not, init only signs in
+and says to connect the agent, and they install the plugin from `/plugin`), and prints what this repository
+still needs in Stableship (install the GitHub app, finish setup, or start a plan), with a link. Say setup, rules and these tools are free; testing the app needs a plan, and that
 they start a new Claude Code session afterwards so the tools load. Running it again is safe: it skips what is
 done. If they would rather not use a terminal, they can sign the Stableship server in from /mcp instead.
 
@@ -96,10 +99,10 @@ Report for this repo's project, briefly:
 4. Read the result. Tell the user what runs from `message`. If `lowered` is set, say the scope
    they asked for was below the project's minimum for this change and the check runs at
    `scope` instead. If `degraded` is `no_checks_left`, say the check replays saved flows only
-   because the month's model-backed checks are used. If `status` is `skipped`, say nothing
-   needed checking and stop.
-5. Call `get_run_status` with the returned run id. While `done` is false, run `sleep 15` and
-   call it again. Stop after about 15 minutes and give the user the run `url` to follow.
+   because the app's deep checks for the month are used (more can be bought in Stableship). If
+   `status` is `skipped`, say nothing needed checking and stop.
+5. Call `get_run_status` with the returned run id. Wait with `get_run_status` and `wait_seconds`, not a fixed polling timer.
+   While `done` is false, call it again. Stop after about 15 minutes and give the user the run `url` to follow.
 6. Report the verdict in plain words, then each blocking finding (severity, title, `where`, id),
    then non-blocking findings as a one-line count. End with the run `url`. If something blocks,
    say that `/stableship:gate fix` can fix it and `/stableship:gate why <id>` explains it. If the
@@ -130,8 +133,9 @@ Report for this repo's project, briefly:
    user before committing or pushing unless they already told you to. Commit on the current
    branch with a clear message; never force-push and never push straight to the default branch
    without the user's say-so.
-6. Once pushed, call `verify_fix` with each finding id the fix closes and the pushed commit sha, then poll
-   `get_run_status` as in **check** until `done`.
+6. Once pushed, verify. Verify once per push, with every finding id it closes: `verify_fix` with `finding_ids`, or `stableship verify <id> <id>…`.
+   Pass the pushed commit sha, then wait on `get_run_status` as in **check** until `done`.
+   Don't call `run_check` to re-test a push or confirm a fix: pushes are checked on their own.
 7. Report per finding: **Fixed** (it no longer reproduces), **Still blocking** (it still
    reproduces; explain what the run found and try again only if you have a new idea), or
    **Not verified** (Stableship had an infrastructure problem; not blocking; offer `rerun_gate`).
@@ -156,7 +160,10 @@ Hard rules for fix, with no exceptions:
    it (`knownIssue`). End with `url`.
 3. For a run, tell them: the scope it ran at and whether it was raised from what they asked
    (`lowered`), what was narrowed (`target`), the verdict and `why`, each blocker with its own
-   reason, and what was not covered (`coverage.incomplete`, `coverage.notCovered`).
+   reason, and what was not covered (`coverage.incomplete`, `coverage.notCovered`). If
+   `degraded` is set, say the run replayed saved flows only: `no_checks_left` means the app's
+   deep checks for the month were used; `monthly_ceiling` means a push went past the app's
+   monthly limit for push testing, which resets on the 1st (UTC).
 4. Never argue a verdict away. If the user disagrees with a finding, say that the founder can
    accept it as a known issue or mark it a false positive in Stableship, and that nothing here
    changes the verdict.

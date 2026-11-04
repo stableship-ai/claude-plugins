@@ -14,8 +14,8 @@ Pass `repo` as `owner/name` from `git remote get-url origin` when a tool asks fo
 
 Not set up yet (the tools are missing or say the token is missing or invalid)? Ask the person to run
 `npx --yes @stableship/cli@latest init` in their own terminal (do not run it yourself): it signs them in
-from a link they approve, adds Stableship to Claude Code, and says what the repository still needs, one
-step at a time. Or they can sign the Stableship server in from /mcp. Setup, rules and these tools are
+from a link they approve, installs the Stableship plugin in Claude Code when the `claude` command is on
+that terminal's PATH, and says what the repository still needs, one step at a time. Or they can sign the Stableship server in from /mcp. Setup, rules and these tools are
 free; testing the app needs a plan.
 
 ## Before you change auth, data access, money or migrations
@@ -64,13 +64,14 @@ personal data. When a note turns out wrong or stops being true, take it out with
 ## Before pushing a risky change
 
 Risky means auth, data access, payments, migrations or anything a rule mentions. Commit and push
-(after the user agrees), then call `run_check` with the pushed commit and branch. Leave `scope`
-out (auto) unless you know better: `security` after access, auth or payment changes, `qa` after
-flow or route changes, `full` for both. The project's path rules set a minimum for some changes;
-asking for less runs at the minimum and the result's `message` says so. Narrow with `flow`,
-`role` or `endpoint` when you changed only that; a narrow check still counts as one check.
-`get_scope_policy` with the changed paths tells you beforehand what would run. Poll
-`get_run_status` every 20-30 seconds until `done`. Report the verdict. `block` means the release
+(after the user agrees). Don't call `run_check` to re-test a push or confirm a fix: pushes are checked on their own.
+Call `run_check` (with the pushed commit and branch) only for a check the push does not give you:
+a wider `scope` (`security` after access, auth or payment changes, `qa` after flow or route
+changes, `full` for both), or one narrowed with `flow`, `role` or `endpoint`; a narrow check
+still uses one of the app's deep checks for the month (push checks and `verify_fix` don't). The project's path rules set a minimum for some changes; asking for
+less runs at the minimum and the result's `message` says so. `get_scope_policy` with the changed
+paths tells you beforehand what would run. Wait with `get_run_status` and `wait_seconds`, not a fixed polling timer.
+Report the verdict. `block` means the release
 would be held: fix it before moving on. Runs that end `failed_infra`, `timed_out` or `cancelled`
 are Stableship's own problem and never block; `rerun_gate` repeats one.
 After an audit, when its report lists flows it could not test (often because setup was missing,
@@ -97,10 +98,13 @@ accept a risk or mark a false positive in Stableship; `get_known_issues` lists t
 3. **Plan, then ask.** Group tasks that share a cause (the plan lists likely groups), order the
    groups blocking first, and name the files and migrations each fix touches and anything that
    would change who can see or do what. Show the user that plan before changing code, unless
-   they already told you to go ahead. Access changes go through `propose_rule`, never the code alone.
+   they already told you to go ahead. Never change who can see or do what beyond the rules: ask the person first and say why.
+   Propose it with `propose_rule`; it waits for the founder to accept it.
 4. **Fix one cause at a time:** the smallest change that meets every acceptance criterion of the
-   tasks it closes, with no unrelated refactors. Push it, call `verify_fix` for each finding it
-   closes, and poll `get_run_status` until done before starting the next.
+   tasks it closes, with no unrelated refactors. Then push. Stableship tests the code on GitHub, so push before you verify.
+   Verify once per push, with every finding id it closes: `verify_fix` with `finding_ids`, or `stableship verify <id> <id>…`.
+   Wait with `get_run_status` and `wait_seconds`, not a fixed polling timer.
+   Start the next cause once it is done.
 5. Never weaken, skip or delete tests, RLS policies, auth checks or validation to make a finding
    go away. Never read or print `.env` files or secrets.
 
