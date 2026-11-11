@@ -1,5 +1,5 @@
 {
-  "description": "Stableship: blocking findings and rules at session start; the matching rules before Claude edits sign-in, data, payments or database code; verdicts and new findings delivered into the session as they land. Every hook is silent and exits 0 when it has nothing to say or cannot reach Stableship.",
+  "description": "Stableship: blocking findings and rules at session start; the matching rules before Claude edits sign-in, data, payments or database code; a self-check before Claude's first push of each commit (the rules and questions for the files it sends); verdicts and new findings delivered into the session as they land. Every hook is silent and exits 0 when it has nothing to say or cannot reach Stableship.",
   "hooks": {
     "SessionStart": [
       {
@@ -23,11 +23,21 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/precheck.mjs\"",
+            "timeout": 8
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "mcp__plugin_stableship_stableship__run_check|mcp__plugin_stableship_stableship__verify_fix|mcp__plugin_stableship_stableship__rerun_gate",
+        "matcher": "mcp__plugin_stableship_stableship__run_check|mcp__plugin_stableship_stableship__verify_fix|mcp__plugin_stableship_stableship__rerun_gate|mcp__plugin_stableship_stableship__run_plan",
         "hooks": [
           {
             "type": "command",

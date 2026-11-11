@@ -2,7 +2,7 @@
 name: stableship
 description: Keep an app inside its Stableship rules while changing it. Use before changing auth, sign-in, who can see or change data, row level security, Supabase tables or migrations, payments, or API routes; before pushing a risky change; when a Stableship finding blocks a release; and when fixing Stableship findings. Covers reading the rules for the file you are editing, proposing rule changes, running scoped checks, explaining why something blocks, and fixing findings in order.
 when_to_use: The repo is connected to Stableship (the stableship MCP tools answer for it, or it has a .gate/rules.md). Triggers include "add a table", "change permissions", "add an admin page", "fix the Stableship findings", "work through the open Stableship findings", "why does this block", "is this safe to ship".
-allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__retest_untested mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_flow mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__remove_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__get_repo_files mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach mcp__plugin_stableship_stableship__create_app mcp__plugin_stableship_stableship__link_repo
+allowed-tools: mcp__plugin_stableship_stableship__list_projects mcp__plugin_stableship_stableship__get_rules mcp__plugin_stableship_stableship__get_context mcp__plugin_stableship_stableship__get_findings mcp__plugin_stableship_stableship__get_fix_brief mcp__plugin_stableship_stableship__get_run_status mcp__plugin_stableship_stableship__explain_finding mcp__plugin_stableship_stableship__get_scope_policy mcp__plugin_stableship_stableship__get_checklist mcp__plugin_stableship_stableship__report_concern mcp__plugin_stableship_stableship__get_code_map mcp__plugin_stableship_stableship__list_plans mcp__plugin_stableship_stableship__save_plan mcp__plugin_stableship_stableship__get_quote mcp__plugin_stableship_stableship__run_plan mcp__plugin_stableship_stableship__get_coverage mcp__plugin_stableship_stableship__get_testing_map mcp__plugin_stableship_stableship__get_known_issues mcp__plugin_stableship_stableship__get_fix_plan mcp__plugin_stableship_stableship__run_check mcp__plugin_stableship_stableship__verify_fix mcp__plugin_stableship_stableship__rerun_gate mcp__plugin_stableship_stableship__retest_untested mcp__plugin_stableship_stableship__propose_rule mcp__plugin_stableship_stableship__add_flow mcp__plugin_stableship_stableship__add_context_note mcp__plugin_stableship_stableship__remove_context_note mcp__plugin_stableship_stableship__whoami mcp__plugin_stableship_stableship__get_next_steps mcp__plugin_stableship_stableship__get_activity mcp__plugin_stableship_stableship__get_app_map mcp__plugin_stableship_stableship__get_approval mcp__plugin_stableship_stableship__get_repo_files mcp__plugin_stableship_stableship__resume_held_audit mcp__plugin_stableship_stableship__reanalyze mcp__plugin_stableship_stableship__set_role mcp__plugin_stableship_stableship__set_role_reach mcp__plugin_stableship_stableship__create_app mcp__plugin_stableship_stableship__link_repo
 ---
 
 # Working inside Stableship's rules
@@ -41,6 +41,10 @@ free; testing the app needs a plan.
   them first with `supabase db pull`, so your migrations describe what is really live before you
   change those tables or policies.
 
+Before changing a table, a server function or a database function, `get_code_map` with `table`, `path` or
+`function` says what else reads or writes it, its counterparts (the other side of an invite or a payment), the rules
+on it (live too, when Stableship reads them), and who may call a function. Change every side together.
+
 ## When access needs to change
 
 Never change who can access what on your own, and never loosen a policy or check to make
@@ -48,6 +52,10 @@ something work. Call `propose_rule` with `resource`, `action`, `allowed` (role k
 `get_context`, or `owner`, `signed_in`, `public`) and a `reason` the founder will read. A rule
 that only adds a check may apply at once; anything that lets more people in waits for the founder.
 Until it is accepted, keep the current rules in code and tell the user it is waiting.
+
+The session-start note lists suggestions already waiting. Rule suggestions waiting for a decision
+(get_context lists them) settle findings only once decided: ask the person about each one, then
+pass their answer to decide_rule_suggestion; never decide one yourself.
 
 When you build something people will rely on (a new page, a checkout step, inviting a teammate), call
 `add_flow` with a `title`, the page it `start`s on, the `roles` who do it, the `steps` and what
@@ -63,9 +71,30 @@ personal data. When a note turns out wrong or stops being true, take it out with
 
 ## Before pushing a risky change
 
+Before each push, check your own change: `get_checklist` with the files the push changes (`git diff --name-only`)
+returns the rules they concern and the questions to answer about the change. Read your diff against them and fix what
+fails first. (With the plugin, the first push of each commit hands you this list and asks you to push again.) It is your
+own reading, not a result: Stableship still checks the pushed commit.
+After checking your change, report what you could not confirm with report_concern (what worries you and the
+files); the next run tests it first. Never use it to say something is safe.
+
+## Testing with test plans
+
+Every push gets a free pre-check: the saved tests of the workflows it affects replay, and the scans run. Deeper
+testing is a test plan run on a private copy, paid with the app's credits. `list_plans` lists the app's plans (Full
+audit, Workflows, API & MCP, Security, Payments, Launch check, What changed, and custom ones) and `get_coverage` says
+what is not fresh. To test: `get_quote` for the plan, tell the user what it tests, about how much and the most it can
+charge, and only when they agree call `run_plan` with the quote's id. Never start one they have not agreed to.
+A risky push is quoted for What changed on its own; offer that run when the pre-check's result names it.
+After building a feature: add a workflow for each new thing people do (`add_flow` with `assertions` and a `tags`
+entry for the feature), group them with `save_plan` if it helps, then quote What changed or the plan that covers
+them. `get_testing_map` gives the whole app and what testing it would take, in Markdown.
+When `run_plan` answers 402, the user approves the run or adds credits in Stableship: pass on its link; you never pay.
+
 Risky means auth, data access, payments, migrations or anything a rule mentions. Commit and push
 (after the user agrees). Don't call `run_check` to re-test a push or confirm a fix: pushes are checked on their own.
-Call `run_check` (with the pushed commit and branch) only for a check the push does not give you:
+On an app with test plans, `run_check` and `retest_untested` answer with the plan to quote instead.
+Otherwise, call `run_check` (with the pushed commit and branch) only for a check the push does not give you:
 a wider `scope` (`security` after access, auth or payment changes, `qa` after flow or route
 changes, `full` for both), or one narrowed with `flow`, `role` or `endpoint`; a narrow check
 still uses one of the app's deep checks for the month (push checks and `verify_fix` don't). The project's path rules set a minimum for some changes; asking for
@@ -103,6 +132,7 @@ accept a risk or mark a false positive in Stableship; `get_known_issues` lists t
 4. **Fix one cause at a time:** the smallest change that meets every acceptance criterion of the
    tasks it closes, with no unrelated refactors. Then push. Stableship tests the code on GitHub, so push before you verify.
    Verify once per push, with every finding id it closes: `verify_fix` with `finding_ids`, or `stableship verify <id> <id>…`.
+   Add `intent` (what the push meant to change, one sentence) and `files` (what it changed): a hint for the next deep check, never proof.
    Wait with `get_run_status` and `wait_seconds`, not a fixed polling timer.
    Start the next cause once it is done.
 5. Never weaken, skip or delete tests, RLS policies, auth checks or validation to make a finding

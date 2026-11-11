@@ -94,7 +94,8 @@ ids this session started and what was already said, never the token.
 
 | Hook | Script | What it does |
 | --- | --- | --- |
-| `SessionStart` (startup, resume, clear, compact) | `session-start.mjs` | Lists open blocking findings for the repo and says how many rules it has (2.5 second timeout). Starts the session's state file. |
+| `SessionStart` (startup, resume, clear, compact) | `session-start.mjs` | Lists open blocking findings for the repo, up to 3 rule suggestions waiting for a person's decision, and how many rules it has (`GET /api/v1/findings` and `GET /api/v1/context`, 2.5 second timeout). Starts the session's state file. |
+| `PreToolUse` on `Bash` | `precheck.mjs` | Only for `git push`: lists the files the push sends, asks `GET /api/v1/checklist` for the rules they concern and the questions to answer about the change (never how Stableship matches them), and declines that first push of the commit with the list as the reason, so Claude checks its diff and pushes again. A second push of the same commit goes through; nothing to check, no login or no answer within 2.5 seconds lets the push go ahead. Pushes from your own terminal are never involved. |
 | `PreToolUse` on `Edit`, `Write`, `MultiEdit`, `NotebookEdit` | `prevention.mjs` | When the file looks like sign-in, sessions, Supabase, migrations, SQL, policies, payments, webhooks, API routes or schemas, asks `GET /api/v1/rules?repo=&path=` (2 second timeout) and adds those rules to Claude's context. Ordinary UI files never reach the network. The same area is shown once per 10 minutes. |
 | `PostToolUse` on `run_check`, `verify_fix`, `rerun_gate` | `track-run.mjs` | Remembers the run id. |
 | `PostToolUse` on `Edit`, `Write`, `MultiEdit`, `Bash` | `inbox.mjs` | At most every 45 seconds: reports runs this session started once they finish, and blocking findings recorded for the repo since the session began (a push check, a click in the app). |

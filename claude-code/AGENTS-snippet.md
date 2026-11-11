@@ -27,12 +27,17 @@ browser, including `NEXT_PUBLIC_*` and `VITE_*` variables). Check ownership with
 **Changing access.** Never change who can see or do what beyond the rules: ask the person first and say why.
 Never loosen a policy or check to make something work. Call `propose_rule` with `resource`, `action`, `allowed` (role keys
 from `get_context`, or `owner`, `signed_in`, `public`) and a `reason`. Until the founder accepts
-it, keep the current rules in code.
+it, keep the current rules in code. Rule suggestions waiting for a decision (get_context lists them)
+settle findings only once decided: ask the person about each one, then pass their answer to
+decide_rule_suggestion; never decide one yourself.
 
 **Product facts.** Save lasting facts future sessions need with `add_context_note`: one fact,
 plain words, no secrets or personal data.
 
-**Pushing a risky change.** Push it after the user agrees. Don't call `run_check` to re-test a push or confirm a fix: pushes are checked on their own.
+**Pushing a risky change.** First call `get_checklist` with the files the push changes and read your diff against the
+rules and questions it returns; fix what fails (your own reading, not a result). After checking your change, report what
+you could not confirm with report_concern (what worries you and the files); the next run tests it first. Never
+use it to say something is safe. Push it after the user agrees. Don't call `run_check` to re-test a push or confirm a fix: pushes are checked on their own.
 Call `run_check` with the pushed commit and branch only for a check the push does not give you:
 a wider `scope`, or one narrowed with `flow`, `role` or `endpoint`; the project's path rules set
 a minimum you cannot go below. Wait with `get_run_status` and `wait_seconds`, not a fixed polling timer.

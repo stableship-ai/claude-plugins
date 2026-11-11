@@ -1,7 +1,7 @@
 ---
-description: Stableship release gate. setup signs in and connects this repo; status shows verdicts; check [quick|security|qa|full] [--as role] [--flow key] [--endpoint path] runs a check; fix fixes and verifies blocking findings; why explains a finding or a run; skip "reason" records that nothing needs checking; test <feature> writes tests from the rules and fixed findings.
-argument-hint: setup | status | check [scope] [--as <role>] [--flow <key>] [--endpoint <path>] | fix [findingId] | why <findingId|runId> | skip "<reason>" | test <feature>
-allowed-tools: mcp__plugin_stableship_stableship__list_projects, mcp__plugin_stableship_stableship__get_findings, mcp__plugin_stableship_stableship__get_fix_brief, mcp__plugin_stableship_stableship__get_run_status, mcp__plugin_stableship_stableship__get_rules, mcp__plugin_stableship_stableship__get_context, mcp__plugin_stableship_stableship__run_check, mcp__plugin_stableship_stableship__verify_fix, mcp__plugin_stableship_stableship__get_fix_plan, mcp__plugin_stableship_stableship__get_report, mcp__plugin_stableship_stableship__explain_finding, mcp__plugin_stableship_stableship__get_scope_policy, mcp__plugin_stableship_stableship__get_known_issues, mcp__plugin_stableship_stableship__rerun_gate, mcp__plugin_stableship_stableship__propose_rule, mcp__plugin_stableship_stableship__add_flow, mcp__plugin_stableship_stableship__add_context_note, mcp__plugin_stableship_stableship__get_setup, mcp__plugin_stableship_stableship__run_audit, mcp__plugin_stableship_stableship__get_audit_status, mcp__plugin_stableship_stableship__get_launch_report, Bash(git remote get-url origin), Bash(git rev-parse HEAD), Bash(git rev-parse --abbrev-ref HEAD), Bash(git status --porcelain=v2 --branch), Bash(git log -1 --format=%H), mcp__plugin_stableship_stableship__whoami, mcp__plugin_stableship_stableship__get_next_steps, mcp__plugin_stableship_stableship__get_activity, mcp__plugin_stableship_stableship__get_app_map, mcp__plugin_stableship_stableship__get_approval, mcp__plugin_stableship_stableship__get_repo_files, mcp__plugin_stableship_stableship__resume_held_audit, mcp__plugin_stableship_stableship__reanalyze
+description: Stableship release gate. setup signs in and connects this repo; status shows verdicts; check [quick|security|qa|full] [--as role] [--flow key] [--endpoint path] runs a check; fix fixes and verifies blocking findings; why explains a finding or a run; skip "reason" records that nothing needs checking; test <feature> writes tests from the rules and fixed findings; tune makes the next audit test more of the app.
+argument-hint: setup | status | check [scope] [--as <role>] [--flow <key>] [--endpoint <path>] | fix [findingId] | why <findingId|runId> | skip "<reason>" | test <feature> | tune
+allowed-tools: mcp__plugin_stableship_stableship__list_projects, mcp__plugin_stableship_stableship__retest_untested, mcp__plugin_stableship_stableship__get_audit_config, mcp__plugin_stableship_stableship__set_test_account, mcp__plugin_stableship_stableship__get_findings, mcp__plugin_stableship_stableship__get_fix_brief, mcp__plugin_stableship_stableship__get_run_status, mcp__plugin_stableship_stableship__get_rules, mcp__plugin_stableship_stableship__get_context, mcp__plugin_stableship_stableship__run_check, mcp__plugin_stableship_stableship__verify_fix, mcp__plugin_stableship_stableship__get_fix_plan, mcp__plugin_stableship_stableship__get_report, mcp__plugin_stableship_stableship__explain_finding, mcp__plugin_stableship_stableship__get_scope_policy, mcp__plugin_stableship_stableship__get_checklist, mcp__plugin_stableship_stableship__list_plans, mcp__plugin_stableship_stableship__save_plan, mcp__plugin_stableship_stableship__get_quote, mcp__plugin_stableship_stableship__run_plan, mcp__plugin_stableship_stableship__get_coverage, mcp__plugin_stableship_stableship__get_testing_map, mcp__plugin_stableship_stableship__get_known_issues, mcp__plugin_stableship_stableship__rerun_gate, mcp__plugin_stableship_stableship__propose_rule, mcp__plugin_stableship_stableship__add_flow, mcp__plugin_stableship_stableship__add_context_note, mcp__plugin_stableship_stableship__get_setup, mcp__plugin_stableship_stableship__run_audit, mcp__plugin_stableship_stableship__get_audit_status, mcp__plugin_stableship_stableship__get_launch_report, Bash(git remote get-url origin), Bash(git rev-parse HEAD), Bash(git rev-parse --abbrev-ref HEAD), Bash(git status --porcelain=v2 --branch), Bash(git log -1 --format=%H), mcp__plugin_stableship_stableship__whoami, mcp__plugin_stableship_stableship__get_next_steps, mcp__plugin_stableship_stableship__get_activity, mcp__plugin_stableship_stableship__get_app_map, mcp__plugin_stableship_stableship__get_approval, mcp__plugin_stableship_stableship__get_repo_files, mcp__plugin_stableship_stableship__resume_held_audit, mcp__plugin_stableship_stableship__reanalyze
 ---
 
 You are running the Stableship release gate for the repository in the current directory.
@@ -129,12 +129,13 @@ Report for this repo's project, briefly:
    of the findings it closes, with no unrelated refactors. Add or update a test that would have
    caught it when the project has tests. Tell the user what you changed and why, in two or three
    sentences.
-5. `verify_fix` re-checks code on GitHub, so the fix must be committed and pushed first. Ask the
+5. Before pushing, call `get_checklist` with the files the push changes and read your diff against
+   the rules and questions it returns; fix what fails. `verify_fix` re-checks code on GitHub, so the fix must be committed and pushed first. Ask the
    user before committing or pushing unless they already told you to. Commit on the current
    branch with a clear message; never force-push and never push straight to the default branch
    without the user's say-so.
 6. Once pushed, verify. Verify once per push, with every finding id it closes: `verify_fix` with `finding_ids`, or `stableship verify <id> <id>…`.
-   Pass the pushed commit sha, then wait on `get_run_status` as in **check** until `done`.
+   Pass the pushed commit sha, plus `intent` (what the push meant to change) and `files`, then wait on `get_run_status` as in **check** until `done`.
    Don't call `run_check` to re-test a push or confirm a fix: pushes are checked on their own.
 7. Report per finding: **Fixed** (it no longer reproduces), **Still blocking** (it still
    reproduces; explain what the run found and try again only if you have a new idea), or
@@ -180,6 +181,26 @@ a way around a block.
    the run `url`. If instead `lowered` is set, the change touches sign-in, data or money and
    Stableship runs the minimum check anyway: say so, say which scope runs and why
    (`message`), then poll as in **check** and report.
+
+### tune
+
+Make the next audit test more of the app, from what the last one could not reach.
+
+1. Call `get_report` for the project's latest audit and `get_audit_config`. Read the report's
+   "Not covered" lines.
+2. Test accounts turned away (a paywall, onboarding or terms page): find in the code what the
+   app checks before it lets a user in (a `user_metadata` or `app_metadata` flag, a row, a page).
+   Call `set_test_account` for that kind of user with the values that satisfy the check and the
+   page it should start on. Never put a password or a real account in it.
+3. Code the review did not reach that matters most (money, sign-in, admin): add it to `focus` in
+   `.gate/audit.yaml` (shape from `get_audit_config`) with a short reason, and generated or
+   vendored code to `ignore`. Commit the file; Stableship reads it on the next push to the
+   default branch.
+4. A finding that is not a problem in this app (the user says so, with a reason): propose
+   `suppress_pattern` with its code, a path pattern and the reason. The person is asked first,
+   always; never suppress to make a release pass.
+5. Tell the user what you changed and that `retest_untested` (or the next audit) uses it. The
+   first re-test within 7 days of an audit is free.
 
 ### test
 
